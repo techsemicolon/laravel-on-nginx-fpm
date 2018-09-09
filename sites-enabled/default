@@ -1,0 +1,47 @@
+# Mostly located at : /etc/nginx/sites-enabled/default
+
+# Setting expiry time for different MIME types
+map $sent_http_content_type $expires {
+    default                    off;
+    text/html                  epoch;
+    text/css                   max;
+    application/javascript     max;
+    ~image/                    max;
+}
+
+server {
+        # Listening to the server
+        listen 80 default_server;
+
+        # Add this for SSL (https) configurations/load balancers etc
+        listen 443 ssl http2 default_server;
+
+        # Setting web root for laravel it's doc_root/public
+        root /var/www/html/public;
+
+        # Add index.php to the list if you are using PHP
+        index index.php index.html;
+
+        # Setting the server name
+        server_name example.com;
+
+        # Using expiry mappings declared above
+        expires $expires;
+
+        # Hiding index.php from the url string
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        # Setting up fastcgi forwarding to php-fpm 
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+            fastcgi_read_timeout 60;
+        }
+
+        # Block acceess to .htaccess files
+        location ~ /\.ht {
+            deny all;
+        }
+}
